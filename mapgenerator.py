@@ -3,6 +3,7 @@ import itertools
 from collections import Counter
 import copy
 
+
 #we will be using kruskal's algorithm to generate a random maze
 
 def generatemaze(n):
@@ -12,10 +13,12 @@ def generatemaze(n):
     walls_horz = [[1 for i in range(n-1)]for j in range(n)]
     walls_vert = [[1 for i in range(n)]for j in range(n-1)]
     walls_remaining = [i for i in range(2*(n-1)*(n))]
+    count = 2*n*(n-1)
     #print(walls_remaining)
-    while Counter(i for i in itertools.chain(*maze)).most_common(1)[0][1] != n*n:
+    while maze[0][0] != maze[n-1][n-1]:
         wall = random.choice(walls_remaining)
-        print(wall)
+        count -= 1
+        #print(wall)
         if wall < (n-1)*(n):
             #removing vertical wall at the position btw x,y and x+1,y
             walls_remaining.remove(wall)
@@ -41,7 +44,9 @@ def generatemaze(n):
                     for j in range(n):
                         if maze[i][j] == k:
                             maze[i][j] = maze[x][y]
+    print(count)
+    if(count < (5/6)*(n**2)):
+        return generatemaze(n)
 
-        #print(maze)
-    return walls_vert,walls_horz
+    return walls_horz,walls_vert,maze
 #print(generatemaze(30))
