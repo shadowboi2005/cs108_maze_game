@@ -3,7 +3,6 @@ import itertools
 from collections import Counter
 import copy
 
-
 #we will be using kruskal's algorithm to generate a random maze
 
 def generatemaze(n):
@@ -47,6 +46,5 @@ def generatemaze(n):
     print(count)
     if(count < (5/6)*(n**2)):
         return generatemaze(n)
-
     return walls_horz,walls_vert,maze
 #print(generatemaze(30))
