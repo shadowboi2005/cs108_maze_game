@@ -12,7 +12,7 @@ n_size = 30                     #size of the maze
 player_pos = pygame.Vector2(screen.get_width() / 2 -300, screen.get_height() / 2 -300)
 mouseinbox = False
 rounded_corn = 10
-speed = 200
+speed = 2000
 bg_map = None
 walls_horz,walls_vert,maze_full = generatemaze(n_size)
 marked_map = None
@@ -24,7 +24,7 @@ flip_char = False               #is the character facing left?
 r_l_is = False                  #is it moving right and left?
 u_d_is = False                  #is it moving up and down?
 frame_num = 1                   #frame number for the animation
-scale = (50,50)                 # a tuple for scaling the character
+scale = (70,70)                 # a tuple for scaling the character
 scalebg = (100,100)
 mode = "startmenu"
 initpos = (50,50)
@@ -32,7 +32,10 @@ running_anim= 'idle'
 not_collide=True
 u_d = 0
 mousedown = False
-
+time_tot = 241
+music = './music_cat.mp3'
+pygame.mixer.init()
+pygame.mixer.music.load(music)
 
 
 def get_image(sheet, start_x,start_y,width, height, scale, colour):
@@ -233,28 +236,35 @@ def generate_current_tiles(marked_map,player_pos):
     return current_tiles
 
 def create_bg(screen,marked_map,player_pos):
+    global frame_num , running_anim , r_l_is , u_d_is
     current_tiles = generate_current_tiles(marked_map,player_pos)
     if running_anim == 'r_l':
         if flip_char:
-            player_x = floor((player_pos[0]-initpos[0]-30)/100)
+            player_x = floor((player_pos[0]-initpos[0]-40)/100)
         else:
-            player_x = floor((player_pos[0]-initpos[0]+30)/100)
+            player_x = floor((player_pos[0]-initpos[0]+40)/100)
         player_y = floor((player_pos[1]-initpos[1])/100)
     elif running_anim == 'u_d':
         player_x = floor((player_pos[0]-initpos[0])/100)
         if u_d == 1:
-            player_y = floor((player_pos[1]-initpos[1]+30)/100)
+            player_y = floor((player_pos[1]-initpos[1]+40)/100)
         else:
-            player_y = floor((player_pos[1]-initpos[1]-30)/100)
+            player_y = floor((player_pos[1]-initpos[1]-40)/100)
     else:
         player_x = floor((player_pos[0]-initpos[0])/100)
         player_y = floor((player_pos[1]-initpos[1])/100)
     #print(player_x,player_y,player_pos)
     if 'i' not in marked_map[player_x][player_y]:
         if running_anim == 'r_l':
-            player_pos[0] -= 50 * (1 -2*(int(flip_char)))
+            player_pos[0] -= speed/100 * (1 -2*(int(flip_char)))
+            running_anim = 'idle'
+            frame_num = 1
+            r_l_is = False
         elif running_anim == 'u_d':
-            player_pos[1] -= 50 * u_d
+            player_pos[1] -= speed/100* u_d
+            running_anim = 'idle'
+            frame_num = 1
+            u_d_is = False
     for x in range(len(current_tiles)):
         i = x//9
         j = x%9 
@@ -269,7 +279,29 @@ def create_bg(screen,marked_map,player_pos):
         else:
             screen.blit(bg_rest,(i*100 -25+ 50-((player_pos[0]-initpos[0])%100), j*100-25+50-((player_pos[1]-initpos[1])%100)))
 
+def chk_collision(marked_map,player_pos):
+    x = int((player_pos[0]-initpos[0])/100)
+    y = int((player_pos[1]-initpos[1])/100)
+    if 'i' not in marked_map[x][y]:
+        return False
+    return True
+
+
+
+
 while running:
+    total_min = time_tot//60
+    total_sec = time_tot%60
+    total_min = int(total_min)
+    total_sec = int(total_sec)
+    if mode == "gameon":
+        time_tot -= dt
+    time_strng = f"{total_min}:{total_sec}" if total_sec>=10 else f"{total_min}:0{total_sec}"
+    if time_tot <= 0:
+        mode = "gameover"
+        pygame.mixer.music.stop()
+    mousedown = False
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -277,6 +309,7 @@ while running:
             mousedown = True
         if event.type == pygame.MOUSEBUTTONUP:
             mousedown = False
+
     match mode:
         case "startmenu":
             screen.fill("black")
@@ -296,6 +329,7 @@ while running:
             screen.blit(text,text_rect)
             pygame.display.flip()
             dt = clock.tick(60) / 100
+            
             if mouseinbox and pygame.mouse.get_pressed()[0]:
                 mode = "gameon"
                 walls_horz,walls_vert,maze_full = generatemaze(n_size)
@@ -308,6 +342,8 @@ while running:
                 bg_generate_2(maze_img,marked_map)
                 pygame.image.save(maze_img,"marked_maze.png")
                 screen = pygame.display.set_mode((800, 1000))
+                time_tot = 240
+                pygame.mixer.music.play()
                 print("start")
 
         case "gameon":
@@ -320,7 +356,7 @@ while running:
                         flip_char = True
                     elif pygame.key.get_pressed()[pygame.K_d]:
                         flip_char = False
-                    player_pos += pygame.Vector2(1 -2*(int(flip_char)) , 0) * dt * speed *1/10
+                    player_pos += pygame.Vector2(1 - 2*(int(flip_char)) , 0) * dt * speed *1/10
                     if(frame_num >= 9):
                         r_l_is = False
                         running_anim = 'idle'
@@ -371,8 +407,11 @@ while running:
                 img_with_flip = pygame.transform.flip(img_copy, flip_char, False).convert_alpha()
                 screen.blit(img_with_flip, pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2 -100))
             pygame.draw.rect(screen,"black",(0,800,800,200))
+            font2 = pygame.font.Font("./dpcomic/dpcomic.ttf",60)
+            text = font2.render(time_strng, True, "white")
+            screen.blit(text, (500, 800))
             pygame.display.flip()
-            dt = clock.tick(60) / 100
+            dt = clock.tick(60) / 1000
         case "winscreen":
             k = 10
             for i in range(1*k,4*k):
@@ -391,7 +430,7 @@ while running:
                 pygame.display.flip()
                 if mousedown:
                     mode = "startmenu"
-                dt = clock.tick(60) / 100
+                #dt = clock.tick(60) / 100
         
         case "gameover":
             screen.fill("black")
@@ -410,7 +449,8 @@ while running:
             text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 + 120))
             screen.blit(text,text_rect)
             pygame.display.flip()
-            dt = clock.tick(60) / 100
+            #dt = clock.tick(60) / 100
+            
             if mouseinbox and mousedown:
                 mode = "gameon"
                 player_pos = pygame.Vector2(screen.get_width() / 2 - 300, screen.get_height() / 2 - 400)
@@ -424,6 +464,7 @@ while running:
                 bg_generate_2(maze_img,marked_map)
                 pygame.image.save(maze_img,"marked_maze.png")
                 screen = pygame.display.set_mode((800, 1000))
+                time_tot = 240
                 print("restart")
     if pygame.key.get_pressed()[pygame.K_SPACE]:
         mode = "gameover"
