@@ -12,7 +12,7 @@ n_size = 30                     #size of the maze
 player_pos = pygame.Vector2(screen.get_width() / 2 -300, screen.get_height() / 2 -300)
 mouseinbox = False
 rounded_corn = 10
-speed = 90
+speed = 200
 bg_map = None
 walls_horz,walls_vert,maze_full = generatemaze(n_size)
 marked_map = None
@@ -31,6 +31,7 @@ initpos = (50,50)
 running_anim= 'idle'
 not_collide=True
 u_d = 0
+mousedown = False
 
 
 
@@ -44,6 +45,7 @@ def get_image(sheet, start_x,start_y,width, height, scale, colour):
 emote_cat = [None]*9
 r_l_cat = [None]*9
 bg_tileset_acc = [None]*9
+img_celeb = [None]*9
 
 img1_cat = get_image(sprite_img, 8,19,15,15, scale, (0, 0, 0))
 #emote keyframes for the cat
@@ -64,6 +66,24 @@ r_l_cat[5] = get_image(sprite_img,136,178,16,16,scale,(0,0,0))
 r_l_cat[6] = get_image(sprite_img,168,178,16,16,scale,(0,0,0))
 r_l_cat[7] = get_image(sprite_img,200,178,16,16,scale,(0,0,0))
 r_l_cat[8] = get_image(sprite_img,232,178,16,16,scale,(0,0,0))
+#celebration keyframes of cat
+#img_celeb[1] = get_image(sprite_img,10,303,16,16,scale,(0,0,0))
+#img_celeb[2] = get_image(sprite_img,40,303,16,16,scale,(0,0,0))
+#img_celeb[3] = get_image(sprite_img,72,303,16,16,scale,(0,0,0))
+#img_celeb[4] = get_image(sprite_img,104,303,16,16,scale,(0,0,0))
+img_celeb[1] = get_image(sprite_img,8,209,16,16,scale,(0,0,0))
+img_celeb[2] = get_image(sprite_img,40,209,16,16,scale,(0,0,0))
+img_celeb[3] = get_image(sprite_img,72,209,16,16,scale,(0,0,0))
+img_celeb[4] = get_image(sprite_img,104,209,16,16,scale,(0,0,0))
+
+img_celeb[5] = get_image(sprite_img,135,303,17,16,scale,(0,0,0))
+img_celeb[6] = get_image(sprite_img,167,303,17,16,scale,(0,0,0))
+img_celeb[7] = get_image(sprite_img,200,303,16,16,scale,(0,0,0))
+img_celeb[8] = get_image(sprite_img,232,303,16,16,scale,(0,0,0))
+
+
+
+
 #bg_tileset reading
 bg_tileset_acc[1] = get_image(bg_tileset, 96, 0, 32, 32, scalebg, (0, 0, 0))
 bg_tileset_acc[2] = get_image(bg_tileset, 128, 0, 32, 32, scalebg, (0, 0, 0))
@@ -202,8 +222,11 @@ def mark_squares(map_full,walls_vert,walls_horz):
 
 def generate_current_tiles(marked_map,player_pos):
     current_tiles = []
+    global mode
     x = int((player_pos[0]-initpos[0])/100)
     y = int((player_pos[1]-initpos[1])/100)
+    if 'z' in marked_map[x][y]:
+        mode='winscreen'
     for i in range(-4,5):
         for j in range(-4,5):
             current_tiles.append(marked_map[x+i][y+j])
@@ -229,9 +252,9 @@ def create_bg(screen,marked_map,player_pos):
     #print(player_x,player_y,player_pos)
     if 'i' not in marked_map[player_x][player_y]:
         if running_anim == 'r_l':
-            player_pos[0] -= 40 * (1 -2*(int(flip_char)))
+            player_pos[0] -= 50 * (1 -2*(int(flip_char)))
         elif running_anim == 'u_d':
-            player_pos[1] -= 40 * u_d
+            player_pos[1] -= 50 * u_d
     for x in range(len(current_tiles)):
         i = x//9
         j = x%9 
@@ -250,6 +273,10 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mousedown = True
+        if event.type == pygame.MOUSEBUTTONUP:
+            mousedown = False
     match mode:
         case "startmenu":
             screen.fill("black")
@@ -343,12 +370,28 @@ while running:
                 img_copy = img1_cat.copy()
                 img_with_flip = pygame.transform.flip(img_copy, flip_char, False).convert_alpha()
                 screen.blit(img_with_flip, pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2 -100))
-
-                continue
             pygame.draw.rect(screen,"black",(0,800,800,200))
             pygame.display.flip()
             dt = clock.tick(60) / 100
-        
+        case "winscreen":
+            k = 10
+            for i in range(1*k,4*k):
+                create_bg(screen,marked_map,((2*n_size-2)*100+initpos[0]+50,(2*n_size-2)*100+initpos[1]+50))
+                img_copy = img_celeb[i//k].copy()
+                img_with_flip = pygame.transform.flip(img_copy, flip_char, False).convert_alpha()
+                screen.blit(img_copy, pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2-100))
+                pygame.draw.rect(screen,"black",(0,800,800,200))
+                font2 =pygame.font.Font("./dpcomic/dpcomic.ttf",60)
+                text = font2.render("Congratulations!!!", True, "White")
+                text2= font2.render("You have reached the end",True,"White")
+                text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 + 350))
+                text_rect2 = text.get_rect(center=(screen.get_width() / 2 - 100, screen.get_height() / 2 + 450))
+                screen.blit(text,text_rect)
+                screen.blit(text2,text_rect2)
+                pygame.display.flip()
+                if mousedown:
+                    mode = "startmenu"
+                dt = clock.tick(60) / 100
         
         case "gameover":
             screen.fill("black")
@@ -368,7 +411,7 @@ while running:
             screen.blit(text,text_rect)
             pygame.display.flip()
             dt = clock.tick(60) / 100
-            if mouseinbox and pygame.mouse.get_pressed()[0]:
+            if mouseinbox and mousedown:
                 mode = "gameon"
                 player_pos = pygame.Vector2(screen.get_width() / 2 - 300, screen.get_height() / 2 - 400)
                 walls_horz,walls_vert,maze_full = generatemaze(n_size)
