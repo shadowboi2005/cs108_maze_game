@@ -24,7 +24,7 @@ flip_char = False               #is the character facing left?
 r_l_is = False                  #is it moving right and left?
 u_d_is = False                  #is it moving up and down?
 frame_num = 1                   #frame number for the animation
-scale = (70,70)                 # a tuple for scaling the character
+scale = (50,50)                 # a tuple for scaling the character
 scalebg = (100,100)
 mode = "startmenu"
 initpos = (50,50)
@@ -32,10 +32,12 @@ running_anim= 'idle'
 not_collide=True
 u_d = 0
 mousedown = False
-time_tot = 241
+time_tot = 240
+max_time=240
 music = './music_cat.mp3'
 pygame.mixer.init()
 pygame.mixer.music.load(music)
+pygame.mixer.music.play(-1)
 
 
 def get_image(sheet, start_x,start_y,width, height, scale, colour):
@@ -43,7 +45,6 @@ def get_image(sheet, start_x,start_y,width, height, scale, colour):
 		image.blit(sheet, (0, 0), (start_x, start_y, width, height))
 		image = pygame.transform.scale(image, (scale[0], scale[1]))
 		image.set_colorkey(colour)
-
 		return image
 emote_cat = [None]*9
 r_l_cat = [None]*9
@@ -261,7 +262,7 @@ def create_bg(screen,marked_map,player_pos):
             frame_num = 1
             r_l_is = False
         elif running_anim == 'u_d':
-            player_pos[1] -= speed/100* u_d
+            player_pos[1] -= speed/100 * u_d
             running_anim = 'idle'
             frame_num = 1
             u_d_is = False
@@ -285,6 +286,31 @@ def chk_collision(marked_map,player_pos):
     if 'i' not in marked_map[x][y]:
         return False
     return True
+
+
+
+def mask(screen,time,time_tot):
+    # Define the radius and color for the visible circle
+    visible_circle_radius = 400*(time/time_tot)
+    #visible_circle_color = (0, 0, 0)  # White color for visibility circle
+
+    mask_surface = pygame.Surface((800, 800), pygame.SRCALPHA)  # Use SRCALPHA for transparency
+    mask_color = (0, 0, 0, time_tot - time)  # Semi-ransparent black (adjust alpha as needed)cls
+
+
+    # Clear the mask surface with semi-transparent black
+    mask_surface.fill(mask_color)
+
+
+    # Draw the visible circle on the mask surface (fully transparent inside circle, opaque outside)
+    pygame.draw.circle(mask_surface, (0, 0, 0, 0), (400+25,25+screen.get_width()/2), visible_circle_radius)
+    
+    # Blit the mask surface onto the game screen with the correct blending mode
+    screen.blit(mask_surface, (0, 0))
+    
+    
+    return
+
 
 
 
@@ -328,7 +354,8 @@ while running:
             text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 + 120))
             screen.blit(text,text_rect)
             pygame.display.flip()
-            dt = clock.tick(60) / 100
+            dt = 0
+            clock.tick(60)
             
             if mouseinbox and pygame.mouse.get_pressed()[0]:
                 mode = "gameon"
@@ -343,7 +370,7 @@ while running:
                 pygame.image.save(maze_img,"marked_maze.png")
                 screen = pygame.display.set_mode((800, 1000))
                 time_tot = 240
-                pygame.mixer.music.play()
+                pygame.mixer.music.play(-1)
                 print("start")
 
         case "gameon":
@@ -410,10 +437,11 @@ while running:
             font2 = pygame.font.Font("./dpcomic/dpcomic.ttf",60)
             text = font2.render(time_strng, True, "white")
             screen.blit(text, (500, 800))
+            mask(screen,time_tot,max_time)
             pygame.display.flip()
             dt = clock.tick(60) / 1000
         case "winscreen":
-            k = 10
+            k = 15
             for i in range(1*k,4*k):
                 create_bg(screen,marked_map,((2*n_size-2)*100+initpos[0]+50,(2*n_size-2)*100+initpos[1]+50))
                 img_copy = img_celeb[i//k].copy()
@@ -430,7 +458,8 @@ while running:
                 pygame.display.flip()
                 if mousedown:
                     mode = "startmenu"
-                #dt = clock.tick(60) / 100
+                    pygame.mixer.music.stop()
+                clock.tick(60)
         
         case "gameover":
             screen.fill("black")
@@ -449,8 +478,9 @@ while running:
             text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 + 120))
             screen.blit(text,text_rect)
             pygame.display.flip()
-            #dt = clock.tick(60) / 100
-            
+            dt = 0
+            clock.tick(60)
+
             if mouseinbox and mousedown:
                 mode = "gameon"
                 player_pos = pygame.Vector2(screen.get_width() / 2 - 300, screen.get_height() / 2 - 400)
@@ -464,10 +494,14 @@ while running:
                 bg_generate_2(maze_img,marked_map)
                 pygame.image.save(maze_img,"marked_maze.png")
                 screen = pygame.display.set_mode((800, 1000))
+                pygame.mixer.music.play(-1)
                 time_tot = 240
+                print(time_tot)
+                clock.tick(60)
                 print("restart")
     if pygame.key.get_pressed()[pygame.K_SPACE]:
         mode = "gameover"
+        pygame.mixer.music.stop()
         print("gameover")
 pygame.quit()
 
