@@ -7,6 +7,7 @@ from map_gen_wilson import WilsonMazeGenerator
 pygame.init()
 screensize = (1200,800)
 screen = pygame.display.set_mode(screensize) #size of the screen
+pygame.display.set_caption("Gay")
 clock = pygame.time.Clock()
 running = True
 dt = 0
@@ -25,6 +26,7 @@ lnk = "img_assets/"+charac_name+".png"
 sprite_img = pygame.image.load(lnk).convert_alpha()
 bg_tileset = pygame.image.load("img_assets/sheet.png").convert_alpha()
 main_bg = pygame.image.load("img_assets/catbg1.jpg")
+opt_bg = pygame.image.load('img_assets/optbg.png')
 flip_char = False               #is the character facing left?
 r_l_is = False                  #is it moving right and left?
 u_d_is = False                  #is it moving up and down?
@@ -47,7 +49,7 @@ pygame.mixer.music.play(-1)
 NDEBUG = True
 
 
-set1 = False
+set1 = True
 if set1:
     leftkey = pygame.K_a
     rightkey = pygame.K_d
@@ -128,6 +130,8 @@ bg_start = get_image(bg_tileset, 176, 96, 32, 32, scalebg, (0, 0, 0))
 bg_end = get_image(bg_tileset, 176, 128, 32, 32, scalebg, (0, 0, 0))
 
 main_img_backg = get_image(main_bg,120,25,1200,800,screensize,(0,0,0))
+opt_img_bg = get_image(opt_bg,0,0,1087,605,screensize,(0,0,0))
+
 
 #to see which type of mode is going on
 
@@ -343,8 +347,8 @@ def mask(screen,time,time_tot):
 
 
 ######## wilson maze renderer ########
-def wilson_maze():
-    maze = WilsonMazeGenerator(40,40)
+def wilson_maze(n_size):
+    maze = WilsonMazeGenerator(n_size,n_size)
     maze.generate_maze()
     maze.solve_maze()
     solution = maze.solution
@@ -363,14 +367,14 @@ def wilson_maze():
     maze.show_solution(True)
     path = path[::-1]
     print(path)
-    marked_map = [['' for i in range(49)] for j in range(49)]
-    for i in range(41):
-        for j in range(41):
-            if maze.grid[j][40 -i] != 0:
+    marked_map = [['' for i in range(n_size +9)] for j in range(n_size +9)]
+    for i in range(n_size +1):
+        for j in range(n_size +1):
+            if maze.grid[j][n_size -i] != 0:
                 marked_map[i][j] = str(random.randint(1,8))
                 marked_map[i][j] += 'i'
     marked_map[0][0] += 'q'
-    marked_map[40][40] += 'z'
+    marked_map[n_size][n_size] += 'z'
     
     
     return marked_map, solution
@@ -388,6 +392,7 @@ while running:
     time_strng = f"{total_min}:{total_sec}" if total_sec>=10 else f"{total_min}:0{total_sec}"
     if time_tot <= 0:
         mode = "gameover"
+        screen = pygame.display.set_mode(screensize)
         pygame.mixer.music.stop()
     mousedown = False
     
@@ -409,6 +414,16 @@ while running:
 
     match mode:
         case "startmenu":
+            if set1:
+                leftkey = pygame.K_a
+                rightkey = pygame.K_d
+                upkey = pygame.K_w
+                downkey = pygame.K_s
+            else:
+                leftkey = pygame.K_LEFT
+                rightkey = pygame.K_RIGHT
+                upkey = pygame.K_UP
+                downkey = pygame.K_DOWN
             #print(flag)
             screen.fill("black")
             screen.blit(main_img_backg,(0,0))
@@ -472,13 +487,13 @@ while running:
                 print("start")
             if mouseinbox2 and pygame.mouse.get_pressed()[0]:
                 mode = "gameon1"
-                marked_map,solution = wilson_maze()
+                n_size = 40
+                marked_map,solution = wilson_maze(n_size)
                 maze_img = pygame.display.set_mode((50+20*len(marked_map),50+20*len(marked_map)))
                 bg_generate_2(maze_img,marked_map)
                 pygame.image.save(maze_img,"marked_maze.png")
                 screen = pygame.display.set_mode((800, 1000))
                 time_tot = 240
-                n_size = 21
                 pygame.time.delay(100)
                 pygame.mixer.music.play(-1)
                 player_pos = (100,100)
@@ -553,7 +568,7 @@ while running:
             pygame.draw.rect(screen,"black",(0,800,800,200))
             font2 = pygame.font.Font("./dpcomic/dpcomic.ttf",60)
             text = font2.render(time_strng, True, "white")
-            screen.blit(text, (500, 800))
+            screen.blit(text, (500,800))
             mask(screen,time_tot,max_time)
             pygame.display.flip()
             dt = clock.tick(60) / 1000
@@ -562,7 +577,8 @@ while running:
             k = 15
             dt = 0
             for i in range(1*k,4*k):
-                create_bg(screen,marked_map,((2*n_size-2)*100+initpos[0]+50,(2*n_size-2)*100+initpos[1]+50))
+                
+                create_bg(screen,marked_map,[(n_size)*100+initpos[0]+50,(n_size)*100+initpos[1]+50])
                 img_copy = img_celeb[i//k].copy()
                 img_with_flip = pygame.transform.flip(img_copy, flip_char, False).convert_alpha()
                 screen.blit(img_copy, pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2-100))
@@ -611,9 +627,10 @@ while running:
                 mousedown = False
         case "options":        
             screen.fill("black")
+            screen.blit(opt_img_bg,(0,0))
             font = pygame.font.Font(None, 74)
             text = font.render("Options", True, "white")
-            text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
+            text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 - 180))
             screen.blit(text, text_rect)
             back_butt = pygame.draw.rect(screen,"white", (screen.get_width() / 2 - 60, screen.get_height() / 2 + 100, 120, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
             if(back_butt.collidepoint(pygame.mouse.get_pos())):
@@ -624,7 +641,31 @@ while running:
             font = pygame.font.Font(None, 30)
             text = font.render("Back", True, "black")
             text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 + 120))
+            change_butt = pygame.draw.rect(screen,"white", (screen.get_width() / 2 - 90, screen.get_height() / 2 - 30, 180, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
             screen.blit(text,text_rect)
+            text_2 = font.render("Change Controls",True,"black")
+            text_rect_2 = text_2.get_rect(center=(screen.get_width()/2,screen.get_height()/2))
+            
+            if(change_butt.collidepoint(pygame.mouse.get_pos())): 
+                pygame.draw.rect(screen,"grey", (screen.get_width() / 2 - 95, screen.get_height() / 2 -35, 190, 60),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
+                mouseinoptbx = True
+            else:
+                mouseinoptbx = False
+            screen.blit(text_2,text_rect_2)
+            font= pygame.font.Font(None,50)
+            if mouseinoptbx and mousedown:
+                if set1:
+                    set1 = False
+                else:
+                    set1 = True
+                pygame.time.delay(500)
+                mousedown = False
+            if set1:
+                text3 = font.render("WASD mode",True,"white")
+            else:
+                text3 = font.render("Arrow mode",True,"white")
+            text_rect3 = text3.get_rect(center=(screen.get_width()/2,screen.get_height()/2+50))
+            screen.blit(text3,text_rect3)
             pygame.display.flip()
             dt = 0
             clock.tick(60)
@@ -637,7 +678,9 @@ while running:
     
     if pygame.key.get_pressed()[pygame.K_SPACE]:
         mode = "gameover"
+        screen = pygame.display.set_mode(screensize)
         pygame.mixer.music.stop()
+
         print("gameover")
 pygame.quit()
 
