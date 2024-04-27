@@ -7,7 +7,7 @@ from map_gen_wilson import WilsonMazeGenerator
 pygame.init()
 screensize = (1200,800)
 screen = pygame.display.set_mode(screensize) #size of the screen
-pygame.display.set_caption("Gay")
+pygame.display.set_caption("Maze Game")
 clock = pygame.time.Clock()
 running = True
 dt = 0
@@ -19,7 +19,7 @@ rounded_corn = 10
 speed = 2200
 frame_speed = 0.3
 bg_map = None
-walls_horz,walls_vert,maze_full = generatemaze(n_size)
+walls_horz,walls_vert,maze_full = None,None,None 
 marked_map = None
 charac_name="cat"          #CREDITS DUE SANCHITA
 lnk = "img_assets/"+charac_name+".png"
@@ -27,6 +27,8 @@ sprite_img = pygame.image.load(lnk).convert_alpha()
 bg_tileset = pygame.image.load("img_assets/sheet.png").convert_alpha()
 main_bg = pygame.image.load("img_assets/catbg1.jpg")
 opt_bg = pygame.image.load('img_assets/optbg.png')
+milk = pygame.image.load('img_assets/milk.png').convert_alpha()
+time_im = pygame.image.load('img_assets/time.png').convert_alpha()
 flip_char = False               #is the character facing left?
 r_l_is = False                  #is it moving right and left?
 u_d_is = False                  #is it moving up and down?
@@ -43,10 +45,15 @@ time_tot = 240
 flag = 'not hi'
 max_time=240
 music = './music_cat.mp3'
+score = 0
+collectable_score=300
+timefac = 5
+count_coll = 0
 pygame.mixer.init()
 pygame.mixer.music.load(music)
 pygame.mixer.music.play(-1)
 NDEBUG = True
+path_file = "./path.txt"
 
 
 set1 = True
@@ -132,136 +139,18 @@ bg_end = get_image(bg_tileset, 176, 128, 32, 32, scalebg, (0, 0, 0))
 main_img_backg = get_image(main_bg,120,25,1200,800,screensize,(0,0,0))
 opt_img_bg = get_image(opt_bg,0,0,1087,605,screensize,(0,0,0))
 
-
+milk_img = get_image(milk,450,550,1000,1000,(50,50),(0,0,0))
+time_img = get_image(time_im,125,0,600,850,(50,50),(0,0,0))
 #to see which type of mode is going on
-
-'''
-def r_l_move(screen,player_pos,dt):
-    img_copy = r_l_cat[int(frame_num)].copy()
-    frame_num += 0.15
-    player_pos += pygame.Vector2(1 -2*(int(flip_char)) , 0) * dt * speed *1/10
-    if(frame_num >= 9):
-        r_l_is = False
-        img_copy = img1_cat.copy()
-    return img_copy
-
-def u_d_move(screen,player_pos,dt):
-    img_copy = emote_cat[int(frame_num)].copy()
-    frame_num += 0.15
-    player_pos += pygame.Vector2(0, -1) * dt * speed *1/10
-    if(frame_num >= 8):
-        u_d_is = False
-        img_copy = img1_cat.copy()
-    return img_copy
-'''
-'''
-	
-#will be changed
-# Function to move the player
-def move(screen,player_pos,dt,running,key):
-    global flip_char
-    state=''
-    if (key[pygame.K_LEFT] or key[pygame.K_a]) and player_pos.x>=0:
-        player_pos += pygame.Vector2(-1, 0) * dt * speed
-        flip_char = True
-        state += 'l'
-    if (key[pygame.K_RIGHT] or key[pygame.K_d]) and player_pos.x<=screen.get_width():
-        player_pos += pygame.Vector2(1, 0) * dt * speed
-        flip_char = False
-        state += 'r'
-    if (key[pygame.K_UP] or key[pygame.K_w]) and player_pos.y>=0:
-        player_pos += pygame.Vector2(0, -1) * dt * speed
-        state += 'u'
-    if (key[pygame.K_DOWN] or key[pygame.K_s]) and player_pos.y<=screen.get_height():
-        player_pos += pygame.Vector2(0, 1) * dt * speed
-        state += 'd'
-    if key[pygame.K_ESCAPE]:
-        running = False
-    print("is this running?")
-    return player_pos,running
-'''
-
-
-# Function to generate the background , will be changed
-def bg_generate(screen ,map_full,n):
-    for i in range(len(map_full)):
-        for j in range(len(map_full)):
-            if map_full[i][j] == map_full[0][0]:
-                pygame.draw.rect(screen,(0,255,0),(30*(i)+initpos[0],30*(j)+initpos[1],30,30))
-            else:
-                pygame.draw.rect(screen,(255,0,0),(30*(i)+initpos[0],30*(j)+initpos[1],30,30))
-    for i in range(n):
-        for j in range(n-1):
-            if walls_horz[i][j] == 1:
-                pygame.draw.line(screen,(0,0,0),(30*(i)+initpos[0],30*(j+1)+initpos[1]),(30*(i+1)+initpos[0],30*(j+1)+initpos[1]),2)
-    for i in range(n-1):
-        for j in range(n):
-            if walls_vert[i][j] == 1:
-                pygame.draw.line(screen,(0,0,0),(30*(i+1)+initpos[0],30*(j)+initpos[1]),(30*(i+1)+initpos[0],30*(j+1)+initpos[1]),2)
-    pygame.draw.circle(screen,(0,0,255),(initpos[0]+30*(n//2)-15,initpos[1]+30*(n//2)-15),10)
-    pygame.draw.line(screen,(0,0,0),initpos,(initpos[0]+30*n,initpos[0]),2)
-    pygame.draw.line(screen,(0,0,0),(initpos[0]+30*n,initpos[0]+30*n),(initpos[0]+30*n,initpos[0]),2)
-    pygame.draw.line(screen,(0,0,0),(initpos[0]+30*n,initpos[0]+30*n),(initpos[0],initpos[0]+30*n),2)
-    pygame.draw.line(screen,(0,0,0),initpos,(initpos[0],initpos[0]+30*n),2)
-
-def bg_generate_2(screen,marked_map):
-    for i in range(len(marked_map)):
-        for j in range(len(marked_map)):
-            if 'i' in marked_map[i][j]:
-                pygame.draw.rect(screen,(0,255,0),(20*(i)+10,20*(j)+10,20,20))
-            else:
-                pygame.draw.rect(screen,(255,0,0),(20*(i)+10,20*(j)+10,20,20))
-            if 'q' in marked_map[i][j]:
-                pygame.draw.circle(screen,(0,0,255),(20*(i)+20,20*(j)+20),10)
-            if 'z' in marked_map[i][j]:
-                pygame.draw.circle(screen,(0,0,255),(20*(i)+20,20*(j)+20),10)
-    pygame.draw.line(screen,(0,0,0),(10,10),(10+20*len(marked_map),10),2)
-    pygame.draw.line(screen,(0,0,0),(10+20*len(marked_map),10+20*len(marked_map)),(10+20*len(marked_map),10),2)
-    pygame.draw.line(screen,(0,0,0),(10+20*len(marked_map),10+20*len(marked_map)),(10,10+20*len(marked_map)),2)
-    pygame.draw.line(screen,(0,0,0),(10,10),(10,10+20*len(marked_map)),2)
-
-
-#marking the squares as per the walls and if it is in the main path or not
-def mark_squares(map_full,walls_vert,walls_horz):
-    marked_map = [['lrud' for i in range(len(map_full)*2+5)] for j in range(len(map_full)*2+5)]
-    print(len(walls_horz))
-    for i in range(len(map_full)*2-1):
-        for j in range(len(map_full)*2-1):
-            if i%2 == 0 and j%2 == 0:
-                if map_full[i//2][j//2] == map_full[0][0]:
-                    marked_map[i][j] = str(random.randint(1,8))
-                    marked_map[i][j] +='i'
-                else:
-                    marked_map[i][j] = ''
-            elif i%2 == 0 and j%2 == 1:
-                if walls_horz[i//2][j//2] == 0:
-                    marked_map[i][j] = str(random.randint(1,8))
-                    marked_map[i][j] += 'i'
-                else:
-                    marked_map[i][j] = ''
-            elif i%2 == 1 and j%2 == 0:
-                if walls_vert[i//2][j//2] == 0:
-                    marked_map[i][j] = str(random.randint(1,8))
-                    marked_map[i][j] += 'i'
-                else:
-                    marked_map[i][j] = ''
-            else:
-                if marked_map[i-1][j] and marked_map[i+1][j] and marked_map[i][j-1] and marked_map[i][j+1]:
-                    marked_map[i][j] = str(random.randint(1,8))
-                    marked_map[i][j] += 'i'
-                else:
-                    marked_map[i][j] = ''
-    marked_map[0][0] += 'q' #first
-    marked_map[len(map_full)*2-2][len(map_full)*2-2] += 'z' #last
-    return marked_map
-
 def generate_current_tiles(marked_map,player_pos):
     current_tiles = []
     global mode
     x = int((player_pos[0]-initpos[0])/100)
     y = int((player_pos[1]-initpos[1])/100)
-    if 'z' in marked_map[x][y]:
+    if 'z' in marked_map[x][y] and mode!='winscreen':
         mode='winscreen'
+        global score, timefac, time_tot
+        score = score + int(timefac*time_tot)
     for i in range(-4,5):
         for j in range(-4,5):
             current_tiles.append(marked_map[x+i][y+j])
@@ -299,6 +188,16 @@ def create_bg(screen,marked_map,player_pos):
                 running_anim = 'idle'
                 frame_num = 1
                 u_d_is = False
+    if 'c' in marked_map[player_x][player_y]:
+        marked_map[player_x][player_y] = marked_map[player_x][player_y][0:2]
+        global score
+        score += collectable_score
+    if 't' in marked_map[player_x][player_y]:
+        global time_tot
+        time_tot += 15
+        marked_map[player_x][player_y] = marked_map[player_x][player_y][0:2]
+
+    
     
     for x in range(len(current_tiles)):
         i = x//9
@@ -311,9 +210,13 @@ def create_bg(screen,marked_map,player_pos):
             if 'z' in current_tiles[x]:
                 img_now = bg_end
             screen.blit(img_now,(i*100 -25+ 50-((player_pos[0]-initpos[0])%100), j*100-25+50-((player_pos[1]-initpos[1])%100)))
+            if 'c' in current_tiles[x]:
+                screen.blit(milk_img,(i*100+50-((player_pos[0]-initpos[0])%100), j*100+50-((player_pos[1]-initpos[1])%100)))
+            if 't' in current_tiles[x]:
+                screen.blit(time_img,(i*100+50-((player_pos[0]-initpos[0])%100), j*100+50-((player_pos[1]-initpos[1])%100)))
         else:
             screen.blit(bg_rest,(i*100 -25+ 50-((player_pos[0]-initpos[0])%100), j*100-25+50-((player_pos[1]-initpos[1])%100)))
-
+            
 def chk_collision(marked_map,player_pos):
     x = int((player_pos[0]-initpos[0])/100)
     y = int((player_pos[1]-initpos[1])/100)
@@ -321,6 +224,26 @@ def chk_collision(marked_map,player_pos):
         return False
     return True
 
+def bg_generate_2(screen,marked_map):
+    for i in range(len(marked_map)):
+        for j in range(len(marked_map)):
+            if 'i' in marked_map[i][j]:
+                pygame.draw.rect(screen,(0,255,0),(20*(i)+10,20*(j)+10,20,20))
+            else:
+                pygame.draw.rect(screen,(255,0,0),(20*(i)+10,20*(j)+10,20,20))
+            if 'q' in marked_map[i][j]:
+                pygame.draw.circle(screen,(0,0,255),(20*(i)+20,20*(j)+20),10)
+            if 'z' in marked_map[i][j]:
+                pygame.draw.circle(screen,(0,0,255),(20*(i)+20,20*(j)+20),10)
+            if 'c' in marked_map[i][j]:
+                pygame.draw.circle(screen,(255,255,0),(20*(i)+20,20*(j)+20),10)
+            if 't' in marked_map[i][j]:
+                pygame.draw.circle(screen,(0,255,255),(20*(i)+20,20*(j)+20),10)
+                
+    pygame.draw.line(screen,(0,0,0),(10,10),(10+20*len(marked_map),10),2)
+    pygame.draw.line(screen,(0,0,0),(10+20*len(marked_map),10+20*len(marked_map)),(10+20*len(marked_map),10),2)
+    pygame.draw.line(screen,(0,0,0),(10+20*len(marked_map),10+20*len(marked_map)),(10,10+20*len(marked_map)),2)
+    pygame.draw.line(screen,(0,0,0),(10,10),(10,10+20*len(marked_map)),2)
 
 
 def mask(screen,time,time_tot):
@@ -329,8 +252,10 @@ def mask(screen,time,time_tot):
     #visible_circle_color = (0, 0, 0)  # White color for visibility circle
 
     mask_surface = pygame.Surface((800, 800), pygame.SRCALPHA)  # Use SRCALPHA for transparency
-    mask_color = (0, 0, 0, time_tot - time)  # Semi-ransparent black (adjust alpha as needed)cls
-
+    if time_tot - time > 0:
+        mask_color = (0, 0, 0, time_tot - time)  # Semi-ransparent black (adjust alpha as needed)cls
+    else:
+        mask_color=(0,0,0,0)
 
     # Clear the mask surface with semi-transparent black
     mask_surface.fill(mask_color)
@@ -366,13 +291,24 @@ def wilson_maze(n_size):
                 path.append('down ')
     maze.show_solution(True)
     path = path[::-1]
-    print(path)
+    with open(path_file,"w") as file:
+        file.write("Path to the solution :\n")
+        for x in range(len(path)):
+            file.write(path[x] + '\n')
     marked_map = [['' for i in range(n_size +9)] for j in range(n_size +9)]
+    global count_coll
+    count_coll = 0
     for i in range(n_size +1):
         for j in range(n_size +1):
             if maze.grid[j][n_size -i] != 0:
                 marked_map[i][j] = str(random.randint(1,8))
                 marked_map[i][j] += 'i'
+                temp = random.random()*100
+                if temp < 4 and (i!=0 and j!=0) and (i!=n_size and j!=n_size):
+                        marked_map[i][j] += "c"
+                        count_coll += 1
+                elif temp > 99   and (i!=0 and j!=0) and (i!=n_size and j!=n_size):
+                        marked_map[i][j] += "t"
     marked_map[0][0] += 'q'
     marked_map[n_size][n_size] += 'z'
     
@@ -401,7 +337,6 @@ while running:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             mousedown = True
-            print("why")
         if event.type == pygame.MOUSEBUTTONUP:
             mousedown = False
         if event.type ==pygame.KEYDOWN:
@@ -425,6 +360,8 @@ while running:
                 upkey = pygame.K_UP
                 downkey = pygame.K_DOWN
             #print(flag)
+            NDEBUG= True
+            score = 0
             screen.fill("black")
             screen.blit(main_img_backg,(0,0))
             font = pygame.font.Font(None, 110)
@@ -464,30 +401,57 @@ while running:
             text = font.render("Options",True,"black")
             text_opt = text.get_rect(center=(screen.get_width()/2 , screen.get_height()/2+25))
             screen.blit(text,text_opt)
-
+            lvl3_button = pygame.draw.rect(screen,"white", (screen.get_width() / 2 - 60, screen.get_height() / 2 + 300, 120, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
+            if(lvl3_button.collidepoint(pygame.mouse.get_pos())): 
+                pygame.draw.rect(screen,"grey", (screen.get_width() / 2 - 70, screen.get_height() / 2 + 295, 140, 60),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
+                mouseinbox3 = True
+            else:
+                mouseinbox3 = False
+            text = font.render("Level 3", True, "black")
+            text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 + 325))
+            screen.blit(text,text_rect)
             pygame.display.flip()
             dt = 0
             clock.tick(60)
             
             if mouseinbox1 and pygame.mouse.get_pressed()[0]:
                 mode = "gameon1"
-                walls_horz,walls_vert,maze_full = generatemaze(n_size)
-                marked_map = mark_squares(maze_full,walls_vert,walls_horz)
-                maze_img = pygame.display.set_mode((1020, 1020))
-                maze_img.fill("gray")
-                bg_generate(maze_img,maze_full,30)
-                pygame.image.save(maze_img,"maze.png")
+                n_size = 20
+                marked_map,solution = wilson_maze(n_size)
                 maze_img = pygame.display.set_mode((50+20*len(marked_map),50+20*len(marked_map)))
                 bg_generate_2(maze_img,marked_map)
                 pygame.image.save(maze_img,"marked_maze.png")
                 screen = pygame.display.set_mode((800, 1000))
                 time_tot = 240
+                pygame.time.delay(100)
                 pygame.mixer.music.play(-1)
-                n_size = 30
+                player_pos = (100,100)
+                frame_num=1
+                u_d_is = False
+                r_l_is = False
+                running_anim = 'idle'
                 print("start")
+                print(count_coll)
             if mouseinbox2 and pygame.mouse.get_pressed()[0]:
                 mode = "gameon1"
                 n_size = 40
+                marked_map,solution = wilson_maze(n_size)
+                maze_img = pygame.display.set_mode((50+20*len(marked_map),50+20*len(marked_map)))
+                bg_generate_2(maze_img,marked_map)
+                pygame.image.save(maze_img,"marked_maze.png")
+                screen = pygame.display.set_mode((800, 1000))
+                time_tot = 240
+                pygame.time.delay(100)
+                pygame.mixer.music.play(-1)
+                player_pos = (100,100)
+                frame_num=1
+                u_d_is = False
+                r_l_is = False
+                running_anim = 'idle'
+                print("start")
+            if mouseinbox3 and pygame.mouse.get_pressed()[0]:
+                mode = "gameon1"
+                n_size = 60
                 marked_map,solution = wilson_maze(n_size)
                 maze_img = pygame.display.set_mode((50+20*len(marked_map),50+20*len(marked_map)))
                 bg_generate_2(maze_img,marked_map)
@@ -568,7 +532,9 @@ while running:
             pygame.draw.rect(screen,"black",(0,800,800,200))
             font2 = pygame.font.Font("./dpcomic/dpcomic.ttf",60)
             text = font2.render(time_strng, True, "white")
-            screen.blit(text, (500,800))
+            screen.blit(text, (500,830))
+            text2 = font2.render(f"Score: {score + int(timefac* time_tot)}",True,"orange")
+            screen.blit(text2,(50,830))
             mask(screen,time_tot,max_time)
             pygame.display.flip()
             dt = clock.tick(60) / 1000
@@ -590,6 +556,15 @@ while running:
                 text_rect2 = text.get_rect(center=(screen.get_width() / 2 - 100, screen.get_height() / 2 + 450))
                 screen.blit(text,text_rect)
                 screen.blit(text2,text_rect2)
+                font2 = pygame.font.Font("./dpcomic/dpcomic.ttf",90)
+                text3 = font2.render(f"Score:{score}",True,"white")
+                text3_rect = text.get_rect(center=(screen.get_width()/2 + 50 , screen.get_height()/2 -250))
+                pygame.draw.rect(screen, "black", (screen.get_width()/2 -160 , screen.get_height()/2 -275,400,70), border_radius=10)
+                screen.blit(text3,text3_rect)
+                font2 = pygame.font.Font("./dpcomic/dpcomic.ttf",92)
+                text3 = font2.render(f"Score:{score}",True,"orange")
+                text3_rect = text.get_rect(center=(screen.get_width()/2 + 47 , screen.get_height()/2 -250))
+                screen.blit(text3,text3_rect)
                 pygame.display.flip()
                 if mousedown:
                     mode = "startmenu"
@@ -599,6 +574,7 @@ while running:
         
         case "gameover":
             screen.fill("black")
+            screen.blit(main_img_backg,(0,0 ))
             font = pygame.font.Font(None, 74)
             text = font.render("Game Over", True, "white")
             text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))

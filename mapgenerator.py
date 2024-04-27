@@ -43,7 +43,7 @@ def generatemaze(n):
                     for j in range(n):
                         if maze[i][j] == k:
                             maze[i][j] = maze[x][y]
-    print(count)
+    print(__name__)
     if(count < (5/6)*(n**2)):
         return generatemaze(n)
     return walls_horz,walls_vert,maze
