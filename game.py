@@ -16,7 +16,7 @@ n_size = 30                     #size of the maze
 player_pos = pygame.Vector2(screen.get_width() / 2 -300, screen.get_height() / 2 -300)
 mouseinbox = False
 rounded_corn = 10
-speed = 2200
+speed = 2000
 frame_speed = 0.3
 bg_map = None
 walls_horz,walls_vert,maze_full = None,None,None 
@@ -27,6 +27,7 @@ sprite_img = pygame.image.load(lnk).convert_alpha()
 bg_tileset = pygame.image.load("img_assets/sheet.png").convert_alpha()
 main_bg = pygame.image.load("img_assets/catbg1.jpg")
 opt_bg = pygame.image.load('img_assets/optbg.png')
+high_bg = pygame.image.load('img_assets/highbg.jpg')
 milk = pygame.image.load('img_assets/milk.png').convert_alpha()
 time_im = pygame.image.load('img_assets/time.png').convert_alpha()
 flip_char = False               #is the character facing left?
@@ -54,7 +55,8 @@ pygame.mixer.music.load(music)
 pygame.mixer.music.play(-1)
 NDEBUG = True
 path_file = "./path.txt"
-
+highscore_file = './highscore.txt'
+score_list = {"e":[],"m":[],"h":[]}
 
 set1 = True
 if set1:
@@ -138,6 +140,7 @@ bg_end = get_image(bg_tileset, 176, 128, 32, 32, scalebg, (0, 0, 0))
 
 main_img_backg = get_image(main_bg,120,25,1200,800,screensize,(0,0,0))
 opt_img_bg = get_image(opt_bg,0,0,1087,605,screensize,(0,0,0))
+high_img_bg = get_image(high_bg,33,2,1313,891,screensize,(0,0,0))
 
 milk_img = get_image(milk,450,550,1000,1000,(50,50),(0,0,0))
 time_img = get_image(time_im,125,0,600,850,(50,50),(0,0,0))
@@ -149,8 +152,26 @@ def generate_current_tiles(marked_map,player_pos):
     y = int((player_pos[1]-initpos[1])/100)
     if 'z' in marked_map[x][y] and mode!='winscreen':
         mode='winscreen'
-        global score, timefac, time_tot
+        global score, timefac, time_tot,score_list,highscore_file
         score = score + int(timefac*time_tot)
+        score_list = get_score(highscore_file)
+        if n_size == 20:
+            score_list["e"].append(score)
+            score_list["e"].sort(reverse=True)
+            if len(score_list["e"])>5:
+                score_list["e"] = score_list["e"][:5]
+        elif n_size == 40:
+            score_list["m"].append(score)
+            score_list["m"].sort(reverse=True)
+            if len(score_list["m"])>5:
+                score_list["m"] = score_list["m"][:5]
+        elif n_size == 60:
+            score_list["h"].append(score)
+            score_list["h"].sort(reverse=True)
+            if len(score_list["h"])>5:
+                score_list["h"] = score_list["h"][:5]
+        write_score(highscore_file,score_list)
+
     for i in range(-4,5):
         for j in range(-4,5):
             current_tiles.append(marked_map[x+i][y+j])
@@ -217,12 +238,31 @@ def create_bg(screen,marked_map,player_pos):
         else:
             screen.blit(bg_rest,(i*100 -25+ 50-((player_pos[0]-initpos[0])%100), j*100-25+50-((player_pos[1]-initpos[1])%100)))
             
-def chk_collision(marked_map,player_pos):
-    x = int((player_pos[0]-initpos[0])/100)
-    y = int((player_pos[1]-initpos[1])/100)
-    if 'i' not in marked_map[x][y]:
-        return False
-    return True
+    return
+
+def get_score(file):
+    score_list = {"e":[],"m":[],"h":[]}
+    with open(file,"r") as f:
+        for line in f:
+            if line[0] == 'e':
+                score_list["e"].append(int(line[1:]))
+            elif line[0] == 'm':
+                score_list["m"].append(int(line[1:]))
+            elif line[0] == 'h':
+                score_list["h"].append(int(line[1:]))
+    return score_list
+
+def write_score(file,score_list):
+    with open(file,"w") as f:
+        for i in range(len(score_list["e"])):
+            f.write(f"e{score_list['e'][i]}\n")
+        for i in range(len(score_list["m"])):
+            f.write(f"m{score_list['m'][i]}\n")
+        for i in range(len(score_list["h"])):
+            f.write(f"h{score_list['h'][i]}\n")
+    return
+
+
 
 def bg_generate_2(screen,marked_map):
     for i in range(len(marked_map)):
@@ -372,44 +412,66 @@ while running:
             text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 - 300))
             screen.blit(text2,text_rect2)
             screen.blit(text, text_rect)
+            
+            #options button
             option_butt = pygame.draw.rect(screen, "white" , (screen.get_width() / 2 - 60, screen.get_height() / 2, 120, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
             if(option_butt.collidepoint(pygame.mouse.get_pos())):
                 pygame.draw.rect(screen,"grey", (screen.get_width() / 2 - 70, screen.get_height() / 2 -5, 140, 60),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
                 mouseinoptbx = True
             else:
                 mouseinoptbx = False
+            font = pygame.font.Font(None, 30)
+            text = font.render("Options",True,"black")
+            text_opt = text.get_rect(center=(screen.get_width()/2 , screen.get_height()/2+25))
+            screen.blit(text,text_opt)
             
-            start_butt = pygame.draw.rect(screen,"white", (screen.get_width() / 2 - 60, screen.get_height() / 2 + 100, 120, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
-            if(start_butt.collidepoint(pygame.mouse.get_pos())):
-                pygame.draw.rect(screen,"grey", (screen.get_width() / 2 - 70, screen.get_height() / 2 + 95, 140, 60),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
+            
+            #level 1 button
+            level1_butt = pygame.draw.rect(screen,"white", (screen.get_width() / 2 - 280, screen.get_height() / 2 + 100, 120, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
+            if(level1_butt.collidepoint(pygame.mouse.get_pos())):
+                pygame.draw.rect(screen,"grey", (screen.get_width() / 2 - 290, screen.get_height() / 2 + 95, 140, 60),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
                 mouseinbox1 = True
             else:
                 mouseinbox1 = False
-            font = pygame.font.Font(None, 30)
+            
             text = font.render("Level 1", True, "black")
-            text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 + 125))
+            text_rect = text.get_rect(center=(screen.get_width() / 2-220, screen.get_height() / 2 + 125))
             screen.blit(text,text_rect)
-            lvl2_button = pygame.draw.rect(screen,"white", (screen.get_width() / 2 - 60, screen.get_height() / 2 + 200, 120, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
+            
+            
+            #level 2 button
+            lvl2_button = pygame.draw.rect(screen,"white", (screen.get_width() / 2 - 60, screen.get_height() / 2 + 100, 120, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
             if(lvl2_button.collidepoint(pygame.mouse.get_pos())): 
-                pygame.draw.rect(screen,"grey", (screen.get_width() / 2 - 70, screen.get_height() / 2 + 195, 140, 60),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
+                pygame.draw.rect(screen,"grey", (screen.get_width() / 2 - 70, screen.get_height() / 2 + 95, 140, 60),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
                 mouseinbox2 = True
             else:
                 mouseinbox2 = False
             text = font.render("Level 2", True, "black")
-            text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 + 225))
+            text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 + 125))
             screen.blit(text,text_rect)
-            text = font.render("Options",True,"black")
-            text_opt = text.get_rect(center=(screen.get_width()/2 , screen.get_height()/2+25))
-            screen.blit(text,text_opt)
-            lvl3_button = pygame.draw.rect(screen,"white", (screen.get_width() / 2 - 60, screen.get_height() / 2 + 300, 120, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
+
+            #level 3 button
+            lvl3_button = pygame.draw.rect(screen,"white", (screen.get_width() / 2 +160, screen.get_height() / 2 + 100, 120, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
             if(lvl3_button.collidepoint(pygame.mouse.get_pos())): 
-                pygame.draw.rect(screen,"grey", (screen.get_width() / 2 - 70, screen.get_height() / 2 + 295, 140, 60),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
+                pygame.draw.rect(screen,"grey", (screen.get_width() / 2 + 150, screen.get_height() / 2 + 95, 140, 60),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
                 mouseinbox3 = True
             else:
                 mouseinbox3 = False
             text = font.render("Level 3", True, "black")
-            text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 + 325))
+            text_rect = text.get_rect(center=(screen.get_width() / 2 +220, screen.get_height() / 2 + 125))
             screen.blit(text,text_rect)
+
+            #highscore button
+            highscore_butt = pygame.draw.rect(screen,"white", (screen.get_width() / 2 - 60, screen.get_height() / 2 + 200, 120, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
+            if(highscore_butt.collidepoint(pygame.mouse.get_pos())):
+                pygame.draw.rect(screen,"grey", (screen.get_width() / 2 - 70, screen.get_height() / 2 + 195, 140, 60),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
+                mouseinbox4 = True
+            else:
+                mouseinbox4 = False
+            text = font.render("High Score", True, "black")
+            text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 + 225))
+            screen.blit(text,text_rect)
+
             pygame.display.flip()
             dt = 0
             clock.tick(60)
@@ -466,9 +528,59 @@ while running:
                 r_l_is = False
                 running_anim = 'idle'
                 print("start")
+            if mouseinbox4 and pygame.mouse.get_pressed()[0]:
+                mode = "highscore"
+                score_list = get_score(highscore_file)
             if mouseinoptbx and pygame.mouse.get_pressed()[0]:
                 mode = 'options'
-
+        
+        case "highscore":
+            screen.fill("black")
+            screen.blit(high_img_bg,(0,0))
+            font = pygame.font.Font(None, 74)
+            text = font.render("High Score", True, "yellow")
+            text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 - 200))
+            screen.blit(text, text_rect)
+            pygame.draw.rect(screen,"blue",(screen.get_width()/2 - 300,screen.get_height()/2-70 ,600,400))
+            font = pygame.font.Font(None, 50)
+            text = font.render("Easy", True, "yellow")
+            text_rect = text.get_rect(center=(screen.get_width() / 2-200, screen.get_height() / 2 -20))
+            screen.blit(text, text_rect)
+            text = font.render("Medium", True, "yellow")
+            text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 - 20))
+            screen.blit(text, text_rect)
+            text = font.render("Hard", True, "yellow")
+            text_rect = text.get_rect(center=(screen.get_width() / 2+200, screen.get_height() / 2 - 20 ))
+            screen.blit(text, text_rect)
+            font = pygame.font.Font(None, 40)
+            for i in range(len(score_list["e"])):
+                text = font.render(f"{score_list['e'][i]}",True,"orange")
+                text_rect = text.get_rect(center=(screen.get_width()/2 - 200, screen.get_height()/2 + 80 + i*50))
+                screen.blit(text,text_rect)
+            for i in range(len(score_list["m"])):
+                text = font.render(f"{score_list['m'][i]}",True,"orange")
+                text_rect = text.get_rect(center=(screen.get_width()/2 , screen.get_height()/2 + 80 + i*50))
+                screen.blit(text,text_rect)
+            for i in range(len(score_list["h"])):
+                text = font.render(f"{score_list['h'][i]}",True,"orange")
+                text_rect = text.get_rect(center=(screen.get_width()/2 + 200, screen.get_height()/2 + 80 + i*50))
+                screen.blit(text,text_rect)
+            mainscreen_butt = pygame.draw.rect(screen,"white",(screen.get_width()/2 - 100,screen.get_height()/2 + 300,200,50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
+            font = pygame.font.Font(None, 30)
+            if mainscreen_butt.collidepoint(pygame.mouse.get_pos()):
+                pygame.draw.rect(screen,"grey",(screen.get_width()/2 - 110,screen.get_height()/2 + 295,220,60),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
+                mouseinbox5 = True
+            else:
+                mouseinbox5 = False
+            text = font.render("Main Screen",True,"black")
+            text_rect = text.get_rect(center=(screen.get_width()/2,screen.get_height()/2 + 325))
+            screen.blit(text,text_rect)
+            if mouseinbox5 and pygame.mouse.get_pressed()[0]:
+                mode = "startmenu"
+            pygame.display.flip()
+            dt = 0
+            clock.tick(60)
+        
         case "gameon1":
             screen.fill("gray")
             #bg_generate(30)
@@ -579,14 +691,14 @@ while running:
             text = font.render("Game Over", True, "white")
             text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
             screen.blit(text, text_rect)
-            restart_butt = pygame.draw.rect(screen,"white", (screen.get_width() / 2 - 60, screen.get_height() / 2 + 100, 120, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
+            restart_butt = pygame.draw.rect(screen,"white", (screen.get_width() / 2 - 100, screen.get_height() / 2 + 100, 200, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
             if(restart_butt.collidepoint(pygame.mouse.get_pos())):
-                pygame.draw.rect(screen,"grey", (screen.get_width() / 2 - 70, screen.get_height() / 2 + 95, 140, 60),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
+                pygame.draw.rect(screen,"grey", (screen.get_width() / 2 - 110, screen.get_height() / 2 + 95, 220, 60),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
                 mouseinbox = True
             else:
                 mouseinbox = False
             font = pygame.font.Font(None, 30)
-            text = font.render("Restart", True, "black")
+            text = font.render("Back to Main Menu", True, "black")
             text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 + 120))
             screen.blit(text,text_rect)
             pygame.display.flip()
@@ -601,6 +713,7 @@ while running:
                 clock.tick(60)
                 print("restart")
                 mousedown = False
+        
         case "options":        
             screen.fill("black")
             screen.blit(opt_img_bg,(0,0))
@@ -652,11 +765,12 @@ while running:
                 print("back")
                 mousedown = False
     
-    if pygame.key.get_pressed()[pygame.K_SPACE]:
-        mode = "gameover"
-        screen = pygame.display.set_mode(screensize)
-        pygame.mixer.music.stop()
-
+    if pygame.key.get_pressed()[pygame.K_SPACE]: 
+        if mode == "gameon1" or mode=="winscreen":
+            mode = "gameover"
+            screen = pygame.display.set_mode(screensize)
+            pygame.mixer.music.stop()
         print("gameover")
+
 pygame.quit()
 
