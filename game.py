@@ -9,20 +9,22 @@ screensize = (1200,800)
 screen = pygame.display.set_mode(screensize) #size of the screen
 pygame.display.set_caption("Maze Game")
 clock = pygame.time.Clock()
-running = True
+running = True                               #for the while loop
 dt = 0
 x=1
 n_size = 30                     #size of the maze
-player_pos = pygame.Vector2(screen.get_width() / 2 -300, screen.get_height() / 2 -300)
-mouseinbox = False
+player_pos = pygame.Vector2(screen.get_width() / 2 -300, screen.get_height() / 2 -300) #initializing the player position
+mouseinbox = False 
 rounded_corn = 10
-speed = 2000
-frame_speed = 0.3
+speed = 2000                                   #speed of the character
+frame_speed = 0.3                              #amount of animation frames per one frame 
 bg_map = None
 walls_horz,walls_vert,maze_full = None,None,None 
 marked_map = None
 charac_name="cat"          #CREDITS DUE SANCHITA
 lnk = "img_assets/"+charac_name+".png"
+
+#initial images loaded
 sprite_img = pygame.image.load(lnk).convert_alpha()
 bg_tileset = pygame.image.load("img_assets/sheet.png").convert_alpha()
 main_bg = pygame.image.load("img_assets/catbg1.jpg")
@@ -30,35 +32,37 @@ opt_bg = pygame.image.load('img_assets/optbg.png')
 high_bg = pygame.image.load('img_assets/highbg.jpg')
 milk = pygame.image.load('img_assets/milk.png').convert_alpha()
 time_im = pygame.image.load('img_assets/time.png').convert_alpha()
+##############
+
 flip_char = False               #is the character facing left?
 r_l_is = False                  #is it moving right and left?
 u_d_is = False                  #is it moving up and down?
 frame_num = 1                   #frame number for the animation
 scale = (50,50)                 # a tuple for scaling the character
-scalebg = (100,100)
-mode = "startmenu"
-initpos = (50,50)
-running_anim= 'idle'
-not_collide=True
+scalebg = (100,100)             #tile size for background
+mode = "startmenu"              #initial menu
+initpos = (50,50)               #initial position inside the square
+running_anim= 'idle'            #initially idle
+not_collide=True                #initially not colliding
 u_d = 0
-mousedown = False
-time_tot = 240
+mousedown = False               
+time_tot = 240                  #total time remaining
 flag = 'not hi'
-max_time=240
+max_time=240                    #total time for each game
 music = './music_cat.mp3'
 score = 0
-collectable_score=300
-timefac = 5
+collectable_score=300           #score for each collectible
+timefac = 5                     #correction factor for time to score
 count_coll = 0
-pygame.mixer.init()
-pygame.mixer.music.load(music)
-pygame.mixer.music.play(-1)
+pygame.mixer.init()             
+pygame.mixer.music.load(music)  #loading the music
+pygame.mixer.music.play(-1)     #looping
 NDEBUG = True
-path_file = "./path.txt"
+path_file = "./path.txt"        #path to the path.txt file
 highscore_file = './highscore.txt'
-score_list = {"e":[],"m":[],"h":[]}
+score_list = {"e":[],"m":[],"h":[]} #score list as a dictionary
 
-set1 = True
+set1 = True                     #which keyset to use
 if set1:
     leftkey = pygame.K_a
     rightkey = pygame.K_d
@@ -76,11 +80,14 @@ else:
 
 
 def get_image(sheet, start_x,start_y,width, height, scale, colour):
-		image = pygame.Surface((width, height)).convert_alpha()
-		image.blit(sheet, (0, 0), (start_x, start_y, width, height))
-		image = pygame.transform.scale(image, (scale[0], scale[1]))
-		image.set_colorkey(colour)
-		return image
+    '''Given a full image, return a cropped and scaled image to match whatever size you want'''
+    image = pygame.Surface((width, height)).convert_alpha()
+    image.blit(sheet, (0, 0), (start_x, start_y, width, height))
+    image = pygame.transform.scale(image, (scale[0], scale[1]))
+    image.set_colorkey(colour)
+    return image
+
+#initializing the animation frames
 emote_cat = [None]*9
 r_l_cat = [None]*9
 bg_tileset_acc = [None]*9
@@ -106,15 +113,10 @@ r_l_cat[6] = get_image(sprite_img,168,178,16,16,scale,(0,0,0))
 r_l_cat[7] = get_image(sprite_img,200,178,16,16,scale,(0,0,0))
 r_l_cat[8] = get_image(sprite_img,232,178,16,16,scale,(0,0,0))
 #celebration keyframes of cat
-#img_celeb[1] = get_image(sprite_img,10,303,16,16,scale,(0,0,0))
-#img_celeb[2] = get_image(sprite_img,40,303,16,16,scale,(0,0,0))
-#img_celeb[3] = get_image(sprite_img,72,303,16,16,scale,(0,0,0))
-#img_celeb[4] = get_image(sprite_img,104,303,16,16,scale,(0,0,0))
 img_celeb[1] = get_image(sprite_img,8,209,16,16,scale,(0,0,0))
 img_celeb[2] = get_image(sprite_img,40,209,16,16,scale,(0,0,0))
 img_celeb[3] = get_image(sprite_img,72,209,16,16,scale,(0,0,0))
 img_celeb[4] = get_image(sprite_img,104,209,16,16,scale,(0,0,0))
-
 img_celeb[5] = get_image(sprite_img,135,303,17,16,scale,(0,0,0))
 img_celeb[6] = get_image(sprite_img,167,303,17,16,scale,(0,0,0))
 img_celeb[7] = get_image(sprite_img,200,303,16,16,scale,(0,0,0))
@@ -144,12 +146,16 @@ high_img_bg = get_image(high_bg,33,2,1313,891,screensize,(0,0,0))
 
 milk_img = get_image(milk,450,550,1000,1000,(50,50),(0,0,0))
 time_img = get_image(time_im,125,0,600,850,(50,50),(0,0,0))
+
+
 #to see which type of mode is going on
 def generate_current_tiles(marked_map,player_pos):
+    '''Given the marked_map and player_pos, gives back the 9x9 tiles around the player. Also handles when the game ends by winning(chks whether it is the last tile or not)'''
     current_tiles = []
     global mode
     x = int((player_pos[0]-initpos[0])/100)
     y = int((player_pos[1]-initpos[1])/100)
+    #if the last tile is reached
     if 'z' in marked_map[x][y] and mode!='winscreen':
         mode='winscreen'
         global score, timefac, time_tot,score_list,highscore_file
@@ -171,15 +177,17 @@ def generate_current_tiles(marked_map,player_pos):
             if len(score_list["h"])>5:
                 score_list["h"] = score_list["h"][:5]
         write_score(highscore_file,score_list)
-
+    #returning the 9x9 tiles
     for i in range(-4,5):
         for j in range(-4,5):
             current_tiles.append(marked_map[x+i][y+j])
     return current_tiles
 
 def create_bg(screen,marked_map,player_pos):
+    '''Creates the final image blitted on the screen, using marked_map and player_pos'''
     global frame_num , running_anim , r_l_is , u_d_is
     current_tiles = generate_current_tiles(marked_map,player_pos)
+    #checks which animation is happening here and decides the bounding boxes for collision detection
     if running_anim == 'r_l':
         if flip_char:
             player_x = floor((player_pos[0]-initpos[0]-40)/100)
@@ -195,8 +203,8 @@ def create_bg(screen,marked_map,player_pos):
     else:
         player_x = floor((player_pos[0]-initpos[0])/100)
         player_y = floor((player_pos[1]-initpos[1])/100)
-    #print(player_x,player_y,player_pos)
-    #collisions here
+    
+    #The actual collision if detected, to bounce back
     if NDEBUG: 
         if 'i' not in marked_map[player_x][player_y]:
             if running_anim == 'r_l':
@@ -219,7 +227,7 @@ def create_bg(screen,marked_map,player_pos):
         marked_map[player_x][player_y] = marked_map[player_x][player_y][0:2]
 
     
-    
+    #render in the background
     for x in range(len(current_tiles)):
         i = x//9
         j = x%9 
@@ -241,6 +249,7 @@ def create_bg(screen,marked_map,player_pos):
     return
 
 def get_score(file):
+    '''gets the scores in the needed format from the file'''
     score_list = {"e":[],"m":[],"h":[]}
     with open(file,"r") as f:
         for line in f:
@@ -253,6 +262,7 @@ def get_score(file):
     return score_list
 
 def write_score(file,score_list):
+    '''Writes the scores in the needed format to the file'''
     with open(file,"w") as f:
         for i in range(len(score_list["e"])):
             f.write(f"e{score_list['e'][i]}\n")
@@ -265,6 +275,7 @@ def write_score(file,score_list):
 
 
 def bg_generate_2(screen,marked_map):
+    '''generates the map image to see it.'''
     for i in range(len(marked_map)):
         for j in range(len(marked_map)):
             if 'i' in marked_map[i][j]:
@@ -287,6 +298,7 @@ def bg_generate_2(screen,marked_map):
 
 
 def mask(screen,time,time_tot):
+    '''to mask the surface and create a circle of visibility(the others are still partially visible)'''
     # Define the radius and color for the visible circle
     visible_circle_radius = 400*(time/time_tot)
     #visible_circle_color = (0, 0, 0)  # White color for visibility circle
@@ -329,12 +341,15 @@ def wilson_maze(n_size):
                 path.append('up ')
             else:
                 path.append('down ')
+    #add the solution to the maze
     maze.show_solution(True)
     path = path[::-1]
+    #writing path to the pathfile
     with open(path_file,"w") as file:
         file.write("Path to the solution :\n")
         for x in range(len(path)):
             file.write(path[x] + '\n')
+    #writing the marked_map with padding of 8 tiles.
     marked_map = [['' for i in range(n_size +9)] for j in range(n_size +9)]
     global count_coll
     count_coll = 0
@@ -357,21 +372,22 @@ def wilson_maze(n_size):
 
 
 while running:
+    #handling time
     total_min = time_tot//60
     total_sec = time_tot%60
     total_min = int(total_min)
     total_sec = int(total_sec)
+    #time should decrease only while game is on 
     if mode == "gameon1":
         time_tot -= dt
-    if mode == "gameon2":
-        time_tot -= dt
     time_strng = f"{total_min}:{total_sec}" if total_sec>=10 else f"{total_min}:0{total_sec}"
-    if time_tot <= 0:
-        mode = "gameover"
+    #game should end if time reaches 0
+    if time_tot <= 0 and mode== "gameon1":
+        mode = "gameover"  
         screen = pygame.display.set_mode(screensize)
         pygame.mixer.music.stop()
     mousedown = False
-    
+    #getting all events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -386,9 +402,10 @@ while running:
                 elif event.key == pygame.K_n:
                     NDEBUG = True
             ##########
-
+    #mode of operation
     match mode:
         case "startmenu":
+            #keybinds
             if set1:
                 leftkey = pygame.K_a
                 rightkey = pygame.K_d
@@ -399,9 +416,10 @@ while running:
                 rightkey = pygame.K_RIGHT
                 upkey = pygame.K_UP
                 downkey = pygame.K_DOWN
-            #print(flag)
             NDEBUG= True
+            #initializing score
             score = 0
+            #making the background
             screen.fill("black")
             screen.blit(main_img_backg,(0,0))
             font = pygame.font.Font(None, 110)
@@ -475,18 +493,19 @@ while running:
             pygame.display.flip()
             dt = 0
             clock.tick(60)
-            
+            #going to level1
             if mouseinbox1 and pygame.mouse.get_pressed()[0]:
                 mode = "gameon1"
-                n_size = 20
-                marked_map,solution = wilson_maze(n_size)
-                maze_img = pygame.display.set_mode((50+20*len(marked_map),50+20*len(marked_map)))
-                bg_generate_2(maze_img,marked_map)
-                pygame.image.save(maze_img,"marked_maze.png")
-                screen = pygame.display.set_mode((800, 1000))
-                time_tot = 240
-                pygame.time.delay(100)
+                n_size = 20                 #size of maze
+                marked_map,solution = wilson_maze(n_size)       #generating the maze
+                maze_img = pygame.display.set_mode((50+20*len(marked_map),50+20*len(marked_map)))    #setting size of screen temporarily to store the image of map
+                bg_generate_2(maze_img,marked_map)              #generate the marked_maze.png
+                pygame.image.save(maze_img,"marked_maze.png")   
+                screen = pygame.display.set_mode((800, 1000))  #back to standard size
+                time_tot = 240                                 #total time
+                pygame.time.delay(100)                          
                 pygame.mixer.music.play(-1)
+                #initialization of variables
                 player_pos = (100,100)
                 frame_num=1
                 u_d_is = False
@@ -494,6 +513,7 @@ while running:
                 running_anim = 'idle'
                 print("start")
                 print(count_coll)
+            #going to level 2
             if mouseinbox2 and pygame.mouse.get_pressed()[0]:
                 mode = "gameon1"
                 n_size = 40
@@ -511,6 +531,7 @@ while running:
                 r_l_is = False
                 running_anim = 'idle'
                 print("start")
+            #going to level3
             if mouseinbox3 and pygame.mouse.get_pressed()[0]:
                 mode = "gameon1"
                 n_size = 60
@@ -528,19 +549,25 @@ while running:
                 r_l_is = False
                 running_anim = 'idle'
                 print("start")
+            #going to highscore page
             if mouseinbox4 and pygame.mouse.get_pressed()[0]:
                 mode = "highscore"
+                #get the updated highscore list
                 score_list = get_score(highscore_file)
+            #going to options page
             if mouseinoptbx and pygame.mouse.get_pressed()[0]:
                 mode = 'options'
         
         case "highscore":
+            #creating the background
             screen.fill("black")
             screen.blit(high_img_bg,(0,0))
             font = pygame.font.Font(None, 74)
+            #title text
             text = font.render("High Score", True, "yellow")
             text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 - 200))
             screen.blit(text, text_rect)
+            #table text
             pygame.draw.rect(screen,"blue",(screen.get_width()/2 - 300,screen.get_height()/2-70 ,600,400))
             font = pygame.font.Font(None, 50)
             text = font.render("Easy", True, "yellow")
@@ -565,6 +592,7 @@ while running:
                 text = font.render(f"{score_list['h'][i]}",True,"orange")
                 text_rect = text.get_rect(center=(screen.get_width()/2 + 200, screen.get_height()/2 + 80 + i*50))
                 screen.blit(text,text_rect)
+            #button to go back to main screen
             mainscreen_butt = pygame.draw.rect(screen,"white",(screen.get_width()/2 - 100,screen.get_height()/2 + 300,200,50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
             font = pygame.font.Font(None, 30)
             if mainscreen_butt.collidepoint(pygame.mouse.get_pos()):
@@ -577,21 +605,27 @@ while running:
             screen.blit(text,text_rect)
             if mouseinbox5 and pygame.mouse.get_pressed()[0]:
                 mode = "startmenu"
+            #show the screen
             pygame.display.flip()
             dt = 0
             clock.tick(60)
         
         case "gameon1":
+            #initially clear the whole screen
             screen.fill("gray")
-            #bg_generate(30)
+            #create the background for the position
             create_bg(screen,marked_map,player_pos)
+            #check for collision
             if not_collide:
+                #is it moving r or l?
                 if r_l_is:
+                    #direction of the movement
                     if pygame.key.get_pressed()[leftkey]:
                         flip_char = True
                     elif pygame.key.get_pressed()[rightkey]:
                         flip_char = False
                     player_pos += pygame.Vector2(1 - 2*(int(flip_char)) , 0) * dt * speed *1/10
+                    #animation frame reset
                     if(frame_num >= 9):
                         r_l_is = False
                         running_anim = 'idle'
@@ -601,12 +635,13 @@ while running:
                         frame_num += frame_speed
                 
                 elif u_d_is:
-                    
+                    #direction of movement
                     if pygame.key.get_pressed()[downkey]:
                         u_d =1
                     if pygame.key.get_pressed()[upkey]:
                         u_d = -1
                     player_pos += pygame.Vector2(0, u_d) * dt * speed *1/10
+                    #animation frame reset
                     if(frame_num >= 9):
                         u_d_is = False
                         running_anim='idle'
@@ -615,11 +650,10 @@ while running:
                         img_copy = emote_cat[int(frame_num)].copy()
                         frame_num += frame_speed
                 else:    
-                    #key = pygame.key.get_pressed()
-                    #player_pos,running = move(screen,player_pos,dt,running,key)
                     img_copy = img1_cat.copy()
                 img_with_flip = pygame.transform.flip(img_copy, flip_char, False).convert_alpha()
                 screen.blit(img_with_flip, pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2-100))
+                #to start the running animation
                 if not (u_d_is or r_l_is):
                     if(pygame.key.get_pressed()[leftkey] or pygame.key.get_pressed()[rightkey] and (running_anim == 'idle') and (not (pygame.key.get_pressed()[downkey] or pygame.key.get_pressed()[upkey]))):
                         r_l_is = True
@@ -633,7 +667,7 @@ while running:
                         if frame_num >= 9:
                             frame_num = 1
             else:
-                #will write now
+                #idle conditions
                 frame_num = 1
                 u_d_is = False
                 r_l_is = False
@@ -641,26 +675,32 @@ while running:
                 img_copy = img1_cat.copy()
                 img_with_flip = pygame.transform.flip(img_copy, flip_char, False).convert_alpha()
                 screen.blit(img_with_flip, pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2 -100))
+            #writing time remaining
             pygame.draw.rect(screen,"black",(0,800,800,200))
             font2 = pygame.font.Font("./dpcomic/dpcomic.ttf",60)
             text = font2.render(time_strng, True, "white")
             screen.blit(text, (500,830))
+            #writing score remaining
             text2 = font2.render(f"Score: {score + int(timefac* time_tot)}",True,"orange")
             screen.blit(text2,(50,830))
+            #mask with the decreasing circle
             mask(screen,time_tot,max_time)
             pygame.display.flip()
             dt = clock.tick(60) / 1000
 
         case "winscreen":
+            #sleep animation and score
             k = 15
             dt = 0
             for i in range(1*k,4*k):
-                
+                #create the background
                 create_bg(screen,marked_map,[(n_size)*100+initpos[0]+50,(n_size)*100+initpos[1]+50])
+                #sleep animation frame
                 img_copy = img_celeb[i//k].copy()
                 img_with_flip = pygame.transform.flip(img_copy, flip_char, False).convert_alpha()
                 screen.blit(img_copy, pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2-100))
                 pygame.draw.rect(screen,"black",(0,800,800,200))
+                #congratulatory message
                 font2 =pygame.font.Font("./dpcomic/dpcomic.ttf",60)
                 text = font2.render("Congratulations!!!", True, "White")
                 text2= font2.render("You have reached the end",True,"White")
@@ -668,29 +708,32 @@ while running:
                 text_rect2 = text.get_rect(center=(screen.get_width() / 2 - 100, screen.get_height() / 2 + 450))
                 screen.blit(text,text_rect)
                 screen.blit(text2,text_rect2)
+                #score
                 font2 = pygame.font.Font("./dpcomic/dpcomic.ttf",90)
                 text3 = font2.render(f"Score:{score}",True,"white")
                 text3_rect = text.get_rect(center=(screen.get_width()/2 + 50 , screen.get_height()/2 -250))
                 pygame.draw.rect(screen, "black", (screen.get_width()/2 -160 , screen.get_height()/2 -275,400,70), border_radius=10)
                 screen.blit(text3,text3_rect)
+                #score again to give 3d effect
                 font2 = pygame.font.Font("./dpcomic/dpcomic.ttf",92)
                 text3 = font2.render(f"Score:{score}",True,"orange")
                 text3_rect = text.get_rect(center=(screen.get_width()/2 + 47 , screen.get_height()/2 -250))
                 screen.blit(text3,text3_rect)
+
                 pygame.display.flip()
-                if mousedown:
-                    mode = "startmenu"
-                    pygame.mixer.music.stop()
                 clock.tick(60)
 
         
         case "gameover":
+            #endscreen
             screen.fill("black")
             screen.blit(main_img_backg,(0,0 ))
+            #gameover text
             font = pygame.font.Font(None, 74)
             text = font.render("Game Over", True, "white")
             text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
             screen.blit(text, text_rect)
+            #restart button to take u back to the main screen
             restart_butt = pygame.draw.rect(screen,"white", (screen.get_width() / 2 - 100, screen.get_height() / 2 + 100, 200, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
             if(restart_butt.collidepoint(pygame.mouse.get_pos())):
                 pygame.draw.rect(screen,"grey", (screen.get_width() / 2 - 110, screen.get_height() / 2 + 95, 220, 60),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
@@ -701,10 +744,11 @@ while running:
             text = font.render("Back to Main Menu", True, "black")
             text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 + 120))
             screen.blit(text,text_rect)
+
             pygame.display.flip()
             dt = 0
             clock.tick(60)
-
+            #button click handling
             if mouseinbox and mousedown:
                 mode = "startmenu" 
                 flag = 'hi'
@@ -714,13 +758,16 @@ while running:
                 print("restart")
                 mousedown = False
         
-        case "options":        
+        case "options":
+            #options menu to change control
             screen.fill("black")
             screen.blit(opt_img_bg,(0,0))
+            #options title
             font = pygame.font.Font(None, 74)
             text = font.render("Options", True, "white")
             text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 - 180))
             screen.blit(text, text_rect)
+            #button to go back to main meny
             back_butt = pygame.draw.rect(screen,"white", (screen.get_width() / 2 - 60, screen.get_height() / 2 + 100, 120, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
             if(back_butt.collidepoint(pygame.mouse.get_pos())):
                 pygame.draw.rect(screen,"grey", (screen.get_width() / 2 - 70, screen.get_height() / 2 + 95, 140, 60),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
@@ -732,6 +779,7 @@ while running:
             text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2 + 120))
             change_butt = pygame.draw.rect(screen,"white", (screen.get_width() / 2 - 90, screen.get_height() / 2 - 30, 180, 50),0,rounded_corn,rounded_corn,rounded_corn,rounded_corn)
             screen.blit(text,text_rect)
+            #button to change controls
             text_2 = font.render("Change Controls",True,"black")
             text_rect_2 = text_2.get_rect(center=(screen.get_width()/2,screen.get_height()/2))
             
@@ -742,6 +790,7 @@ while running:
                 mouseinoptbx = False
             screen.blit(text_2,text_rect_2)
             font= pygame.font.Font(None,50)
+            #changing the set
             if mouseinoptbx and mousedown:
                 if set1:
                     set1 = False
@@ -765,7 +814,8 @@ while running:
                 print("back")
                 mousedown = False
     
-    if pygame.key.get_pressed()[pygame.K_SPACE]: 
+    if pygame.key.get_pressed()[pygame.K_SPACE]:
+        #handling emergency escape or leaving from winscreen 
         if mode == "gameon1" or mode=="winscreen":
             mode = "gameover"
             screen = pygame.display.set_mode(screensize)
@@ -773,4 +823,3 @@ while running:
         print("gameover")
 
 pygame.quit()
-
